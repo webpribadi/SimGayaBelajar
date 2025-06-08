@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIMULASI TES GAYA BELAJAR</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <img src="logo-sekolah.png" alt="Logo Sekolah" style="display:block; margin: 0 auto; width:70px;">
+  <h1>Simulasi Tes Gaya Belajar</h1>
+  <p style="text-align:center; font-size: 1.1em; color: #444; margin-top: -2px; margin-bottom: 30px;">
+   Kenali cara belajar terbaikmu! Apakah kamu tipe Visual, Auditori, atau Kinestetik? Ikuti tes sederhana ini untuk mengetahuinya.
+  </p>
+  <div id="form-identitas">
+    <h2>Identitas Siswa</h2>
+    <label for="nama">Nama</label>
+    <input type="text" id="nama" placeholder="Masukkan nama lengkap">
+
+    <label for="kelas">Kelas</label>
+    <input type="text" id="kelas" placeholder="Contoh: 8A / 9B">
+
+    <button onclick="mulaiTes()">Mulai Tes</button>
+  </div>
+
+  <form id="form-tes" class="hidden">
+    <h2>Soal Tes</h2>
+    <div id="soal-container"></div>
+    <button type="submit">Lihat Hasil</button>
+  </form>
+
+  <div id="hasil" class="hidden">
+    <h2>Hasil Tes</h2>
+    <div id="ikon-gaya" style="text-align: center; margin-bottom: 15px;"></div>
+    <p><strong>Nama:</strong> <span id="hasil-nama"></span></p>
+    <p><strong>Kelas:</strong> <span id="hasil-kelas"></span></p>
+    <p><strong>Skor:</strong> <span id="skor"></span></p>
+    <p><strong>Gaya Belajar:</strong> <span id="gaya"></span></p>
+    <p id="penjelasan"></p>
+    <div id="rekomendasi"></div>
+    <button onclick="mulaiUlang()">Mulai Ulang</button>
+    <button class="btn-unduh" onclick="unduhPDF()">Unduh Hasil (PDF)</button>
+  </div>
+</div>
+<script>
+const soal = [
+  { teks: "1. Ketika saya mengoperasikan peralatan baru, saya biasanya:", opsi: ["Membaca instruksi terlebih dahulu", "Mendengarkan penjelasan dari orang lain", "Langsung mencoba sambil belajar"] },
+  { teks: "2. Ketika saya membutuhkan petunjuk arah, saya biasanya:", opsi: ["Melihat peta", "Meminta petunjuk secara lisan", "Mengandalkan insting/kompas"] },
+  { teks: "3. Jika menemukan cara baru mengerjakan soal, saya:", opsi: ["Mengikuti instruksi guru", "Bertanya kepada teman", "Mencoba sendiri sambil menguji"] },
+  { teks: "4. Jika mengajari orang lain, saya:", opsi: ["Menulis instruksi", "Menjelaskan secara verbal", "Mendemonstrasikan dan membiarkan mereka mencoba"] },
+  { teks: "5. Saya cenderung mengatakan:", opsi: ["Perhatikan bagaimana saya melakukannya", "Dengarkan yang saya jelaskan", "Anda harus mencobanya"] },
+  { teks: "6. Selama waktu luang, saya paling menikmati:", opsi: ["Pergi ke museum/galeri", "Mendengarkan musik dan ngobrol", "Berolahraga atau DIY"] },
+  { teks: "7. Saat berbelanja pakaian, saya:", opsi: ["Bayangkan bagaimana saat mengenakannya", "Diskusi dengan staf toko", "Coba langsung pakaian tersebut"] },
+  { teks: "8. Saat belajar liburan, saya:", opsi: ["Membaca brosur", "Mendengarkan rekomendasi", "Membayangkan sensasi di sana"] },
+  { teks: "9. Jika membeli motor baru, saya:", opsi: ["Membaca ulasan di surat kabar/majalah", "Mendiskusikan kebutuhan dengan teman", "Test-drive berbagai jenis motor"] },
+  { teks: "10. Ketika mempelajari keterampilan baru, saya merasa nyaman:", opsi: ["Memperhatikan guru", "Mendiskusikannya dengan guru", "Mencoba sendiri saat belajar"] },
+  { teks: "11. Jika memilih makanan dari menu, saya cenderung:", opsi: ["Membayangkan bentuknya", "Bicara dalam kepala atau bersama teman", "Membayangkan rasanya"] },
+  { teks: "12. Ketika mendengarkan band, saya:", opsi: ["Menonton anggota band dan penonton", "Mendengarkan lirik dan musik", "Tergerak mengikuti irama"] },
+  { teks: "13. Saat berkonsentrasi, saya paling sering:", opsi: ["Fokus pada kata/gambar di depan", "Diskusi dalam pikiran", "Banyak bergerak, main dengan benda"] },
+  { teks: "14. Saya memilih alat tulis karena:", opsi: ["Warna & tampilannya", "Penjelasan penjual", "Tekstur dan sensasi menyentuhnya"] },
+  { teks: "15. Memori pertama saya adalah:", opsi: ["Melihat sesuatu", "Mendengar sesuatu", "Melakukan sesuatu"] },
+  { teks: "16. Saat cemas, saya:", opsi: ["Visualisasikan skenario terburuk", "Bicara dalam hati", "Gelisah terus-menerus"] },
+  { teks: "17. Saya merasa terhubung dengan orang karena:", opsi: ["Penampilannya", "Apa yang mereka ucapkan", "Perasaan yang mereka timbulkan"] },
+  { teks: "18. Ketika harus memperbaiki ujian, saya biasanya:", opsi: ["Menulis catatan dan diagram", "Membicarakannya sendiri atau bersama", "Membayangkan/melakukan atau membuat rumus"] },
+  { teks: "19. Jika menjelaskan kepada seseorang, saya cenderung:", opsi: ["Menunjukkan maksud saya", "Menjelaskan sampai mereka paham", "Mendorong mereka mencoba sambil bercerita"] },
+  { teks: "20. Saya sangat suka:", opsi: ["Menonton film, fotografi, seni, observasi", "Mendengarkan musik, radio, ngobrol", "Olahraga, memasak, menari"] },
+  { teks: "21. Sebagian besar waktu luang saya dihabiskan untuk:", opsi: ["Menonton televisi", "Berbicara dengan teman", "Aktivitas fisik atau membuat sesuatu"] },
+  { teks: "22. Ketika bertemu orang baru, saya biasanya:", opsi: ["Atur pertemuan tatap muka", "Hubungi lewat telepon", "Coba lakukan kegiatan bersama"] },
+  { teks: "23. Saya pertama-tama perhatikan seseorang melalui:", opsi: ["Penampilan dan pakaian", "Suara dan cara bicara", "Gerakan tubuh"] },
+  { teks: "24. Jika saya marah, saya cenderung:", opsi: ["Memikirkan terus hal itu", "Meninggikan suara dan menyampaikan perasaan", "Ekspresikan fisik (sambil hentak kaki atau banting barang)"] },
+  { teks: "25. Saya paling mudah mengingat:", opsi: ["Wajah", "Nama", "Peristiwa/aktivitas yang saya lakukan"] },
+  { teks: "26. Saya tahu seseorang berbohong jika:", opsi: ["Menghindari kontak mata", "Suaranya berubah", "Ada perilaku aneh/tidak biasa"] },
+  { teks: "27. Ketika bertemu teman lama, saya:", opsi: ["Mengatakan ‘senang melihatmu!’", "Mengatakan ‘senang mendengar darimu!’", "Memberi mereka pelukan/jabat tangan"] },
+  { teks: "28. Saya mengingat hal-hal terbaik dengan:", opsi: ["Menulis catatan atau menyimpan detail", "Mengucapkannya keras atau dalam hati", "Melakukan/praktik atau membayangkan gerakan"] },
+  { teks: "29. Jika mengeluh tentang barang salah, saya nyaman:", opsi: ["Menulis surat", "Melakukan via telepon", "Kembali ke toko atau kirim ke pusat"] },
+  { teks: "30. Saya cenderung berkata:", opsi: ["Saya melihat apa yang Anda maksud", "Saya mendengar apa yang Anda katakan", "Saya tahu bagaimana perasaan Anda"] }
+];
+
+function mulaiTes() {
+  const nama = document.getElementById("nama").value.trim();
+  const kelas = document.getElementById("kelas").value.trim();
+  if (!nama || !kelas) return alert("Isi nama dan kelas terlebih dahulu.");
+
+  document.getElementById("form-identitas").classList.add("hidden");
+  document.getElementById("form-tes").classList.remove("hidden");
+
+  const container = document.getElementById("soal-container");
+  container.innerHTML = "";
+  soal.forEach((s, index) => {
+    const div = document.createElement("div");
+    div.classList.add("question");
+    div.innerHTML = `<p>${s.teks}</p>` +
+      s.opsi.map((o, i) => `<label><input type="radio" name="q${index}" value="${i}" required> ${o}</label>`).join("");
+    container.appendChild(div);
+  });
+}
+
+function mulaiUlang() {
+  document.getElementById("form-identitas").classList.remove("hidden");
+  document.getElementById("form-tes").classList.add("hidden");
+  document.getElementById("hasil").classList.add("hidden");
+  document.getElementById("nama").value = "";
+  document.getElementById("kelas").value = "";
+}
+
+function deteksiGaya(jawaban) {
+  const visual = jawaban.filter(j => j === 0).length;
+  const auditori = jawaban.filter(j => j === 1).length;
+  const kinestetik = jawaban.filter(j => j === 2).length;
+  let gaya = "", penjelasan = "", rekomendasi = "", ikon = "";
+  const max = Math.max(visual, auditori, kinestetik);
+  const dominan = [
+    { label: "Visual", nilai: visual, penjelasan: "Kamu lebih mudah memahami informasi melalui penglihatan, gambar, diagram, dan warna.", rekomendasi: "Gunakan mind map, highlight warna, dan video pembelajaran.", ikon: "icon-visual.png" },
+    { label: "Auditori", nilai: auditori, penjelasan: "Kamu lebih mudah memahami informasi melalui suara, diskusi, dan penjelasan verbal.", rekomendasi: "Belajar dengan diskusi, mendengarkan rekaman, dan menjelaskan ulang dengan suara.", ikon: "icon-auditori.png" },
+    { label: "Kinestetik", nilai: kinestetik, penjelasan: "Kamu lebih mudah memahami informasi melalui gerakan, pengalaman langsung, dan aktivitas fisik.", rekomendasi: "Belajar sambil praktik langsung, simulasi, eksperimen, atau roleplay.", ikon: "icon-kinestetik.png" }
+  ].filter(g => g.nilai === max);
+
+  if (dominan.length === 1) {
+    gaya = dominan[0].label;
+    penjelasan = dominan[0].penjelasan;
+    rekomendasi = dominan[0].rekomendasi;
+    ikon = dominan[0].ikon;
+  } else {
+    gaya = dominan.map(d => d.label).join(" & ");
+    penjelasan = "Kamu memiliki gaya belajar campuran: " + gaya + ". Cobalah menggunakan strategi belajar yang memadukan semua gaya tersebut.";
+    rekomendasi = "Kombinasikan gambar/video, diskusi, dan praktik langsung untuk hasil belajar terbaik.";
+    ikon = "icon-mix.png"; // kalau mau buat ikon khusus untuk campuran, atau bisa kosong
+  }
+  return { visual, auditori, kinestetik, gaya, penjelasan, rekomendasi, ikon };
+}
+
+document.getElementById("form-tes").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const jawaban = soal.map((_, i) => parseInt(document.querySelector(`input[name=q${i}]:checked`).value));
+  const hasil = deteksiGaya(jawaban);
+document.getElementById("hasil-nama").innerText = document.getElementById("nama").value;
+document.getElementById("hasil-kelas").innerText = document.getElementById("kelas").value;
+document.getElementById("skor").innerText = `Visual: ${hasil.visual}, Auditori: ${hasil.auditori}, Kinestetik: ${hasil.kinestetik}`;
+document.getElementById("gaya").innerText = hasil.gaya;
+document.getElementById("penjelasan").innerText = hasil.penjelasan;
+document.getElementById("rekomendasi").innerHTML = `<p><strong>Rekomendasi Belajar:</strong> ${hasil.rekomendasi}</p>`;
+
+// Tambahkan elemen gambar ikon (jika belum ada, buat di HTML dulu)
+const ikonContainer = document.getElementById("ikon-gaya");
+if (ikonContainer) {
+  ikonContainer.innerHTML = `<img src="${hasil.ikon}" alt="Ikon Gaya Belajar" style="width: 100px; display: block; margin: 10px auto;">`;
+} else {
+  const newImg = document.createElement("img");
+  newImg.src = hasil.ikon;
+  newImg.alt = "Ikon Gaya Belajar";
+  newImg.style.width = "100px";
+  newImg.style.display = "block";
+  newImg.style.margin = "10px auto";
+  document.getElementById("hasil").appendChild(newImg);
+}
+
+  document.getElementById("form-tes").classList.add("hidden");
+  function unduhPDF() {
+  const element = document.getElementById("hasil");
+  const opt = {
+    margin: 0.5,
+    filename: `Hasil_Gaya_Belajar_${document.getElementById("nama").value}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+    }
+  document.getElementById("hasil").classList.remove("hidden");
+});
+function unduhPDF() {
+  const { jsPDF } = window.jspdf;
+  // Ukuran A4, orientasi portrait
+  const doc = new jsPDF({
+    unit: "mm",
+    format: "a4",
+    orientation: "portrait",
+  });
+
+  // Margin
+  const marginLeft = 20;
+  const marginTop = 20;
+
+  // Ambil data dari halaman
+  const nama = document.getElementById("hasil-nama").innerText;
+  const kelas = document.getElementById("hasil-kelas").innerText;
+  const skor = document.getElementById("skor").innerText;
+  const gaya = document.getElementById("gaya").innerText;
+  const penjelasan = document.getElementById("penjelasan").innerText;
+  const rekomendasi = document.getElementById("rekomendasi").innerText;
+
+  // Judul besar dan bold
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("Hasil Tes Gaya Belajar VAK", doc.internal.pageSize.getWidth() / 2, marginTop, { align: "center" });
+
+  // Garis bawah judul
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.8);
+  doc.line(marginLeft, marginTop + 5, doc.internal.pageSize.getWidth() - marginLeft, marginTop + 5);
+
+  // Set font isi
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+
+  // Mulai isi data dengan jarak baris 10mm
+  let y = marginTop + 15;
+  doc.text(`Nama: ${nama}`, marginLeft, y);
+  y += 10;
+  doc.text(`Kelas: ${kelas}`, marginLeft, y);
+  y += 10;
+  doc.text(`Skor: ${skor}`, marginLeft, y);
+  y += 10;
+  doc.text(`Gaya Belajar Dominan: ${gaya}`, marginLeft, y);
+
+  y += 15;
+  doc.setFont("helvetica", "bold");
+  doc.text("Penjelasan:", marginLeft, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  // Untuk paragraf, gunakan splitTextToSize agar teks wrap rapi
+  const penjelasanLines = doc.splitTextToSize(penjelasan, doc.internal.pageSize.getWidth() - marginLeft * 2);
+  doc.text(penjelasanLines, marginLeft, y);
+
+  y += penjelasanLines.length * 7 + 10;
+  doc.setFont("helvetica", "bold");
+  doc.text("Rekomendasi Belajar:", marginLeft, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  const rekomLines = doc.splitTextToSize(rekomendasi, doc.internal.pageSize.getWidth() - marginLeft * 2);
+  doc.text(rekomLines, marginLeft, y);
+
+  // Simpan PDF
+  doc.save(`Hasil_Tes_VAK_${nama}.pdf`);
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>
